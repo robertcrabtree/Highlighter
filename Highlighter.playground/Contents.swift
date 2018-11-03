@@ -16,7 +16,7 @@ class Highlighter {
             let sortedMatches = Highlighter.sort(unionizedMatches)
             if let firstMatch = sortedMatches.first {
                 let snippet = Highlighter.snip(text, around: firstMatch, maxCount: maxCount)
-                let highlightedSentence = Highlighter.highlightAndSnip(sortedMatches, in: text, with: snippet)
+                let highlightedSentence = Highlighter.highlight(sortedMatches, in: text, with: snippet)
                 return highlightedSentence
             }
         }
@@ -85,7 +85,7 @@ class Highlighter {
         }
     }
 
-    private static func highlightAndSnip(_ ranges: [Range<String.Index>], in text: String, with snippet: Range<String.Index>) -> NSAttributedString {
+    private static func highlight(_ ranges: [Range<String.Index>], in text: String, with snippet: Range<String.Index>) -> NSAttributedString {
         print("highlight")
         let attributedText = NSMutableAttributedString(string: text)
         ranges.forEach { range in
@@ -98,7 +98,7 @@ class Highlighter {
             }
         }
         
-        var result = NSMutableAttributedString(attributedString: attributedText.attributedSubstring(from: NSRange(snippet, in: text)))
+        let result = NSMutableAttributedString(attributedString: attributedText.attributedSubstring(from: NSRange(snippet, in: text)))
         if snippet.lowerBound != text.startIndex {
             result.insert(NSMutableAttributedString(string: "..."), at: 0)
         }
