@@ -7,12 +7,12 @@ import Foundation
 
 class Highlighter {
     
-    let sentence: String
+    let text: String
     let search: String
     let maxCount: Int
     
-    init(sentence: String, search: String, maxCount: Int) {
-        self.sentence = sentence
+    init(text: String, search: String, maxCount: Int) {
+        self.text = text
         self.search = search
         self.maxCount = maxCount
     }
@@ -20,26 +20,26 @@ class Highlighter {
     func execute() -> NSAttributedString? {
         print("execute")
         let tokens = self.tokens(in: search)
-        let matches = self.rangesOfAll(tokens, in: sentence)
+        let matches = self.ranges(of: tokens, in: text)
         if matches.count > 0 {
-            let mergedMatches = self.merge(ranges: matches)
-            let sortedMatches = self.sort(ranges: mergedMatches)
+            let unionizedMatches = self.union(of: matches)
+            let sortedMatches = self.sort(unionizedMatches)
             if let firstMatch = sortedMatches.first {
-                let snippet = self.snip(string: sentence, by: firstMatch, maxCount: maxCount)
-                let highlightedSentence = highlight(string: sentence, with: sortedMatches)
-                let snippedHighlightedSentence = highlightedSentence.attributedSubstring(from: NSRange(snippet, in: sentence))
+                let snippet = self.snip(text, around: firstMatch, maxCount: maxCount)
+                let highlightedSentence = highlight(sortedMatches, in: text)
+                let snippedHighlightedSentence = highlightedSentence.attributedSubstring(from: NSRange(snippet, in: text))
                 return snippedHighlightedSentence
             }
         }
         return nil
     }
     
-    func tokens(in string: String) -> [String] {
+    func tokens(in text: String) -> [String] {
         print("tokens")
-        return string.components(separatedBy: .whitespaces).filter { return !$0.isEmpty }
+        return text.components(separatedBy: .whitespaces).filter { return !$0.isEmpty }
     }
     
-    func rangesOf(_ token: String, in text: String) -> [Range<String.Index>] {
+    func ranges(of token: String, in text: String) -> [Range<String.Index>] {
         print("match")
         var matchingRanges = [Range<String.Index>]()
         var searchWindowLeft = text.startIndex
@@ -57,11 +57,11 @@ class Highlighter {
         return matchingRanges
     }
 
-    func rangesOfAll(_ tokens: [String], in text: String) -> [Range<String.Index>] {
+    func ranges(of tokens: [String], in text: String) -> [Range<String.Index>] {
         print("matchAll")
         var matches = [Range<String.Index>]()
         for token in tokens {
-            let match = self.rangesOf(token, in: text)
+            let match = self.ranges(of: token, in: text)
             if match.isEmpty {
                 return []
             } else {
@@ -71,7 +71,7 @@ class Highlighter {
         return matches
     }
 
-    func merge(ranges: [Range<String.Index>]) -> [Range<String.Index>] {
+    func union(of ranges: [Range<String.Index>]) -> [Range<String.Index>] {
         print("merge")
         var merged = [Range<String.Index>]()
         for i in ranges {
@@ -91,7 +91,7 @@ class Highlighter {
         return merged
     }
 
-    func sort(ranges: [Range<String.Index>]) -> [Range<String.Index>] {
+    func sort(_ ranges: [Range<String.Index>]) -> [Range<String.Index>] {
         print("sort")
         return ranges.sorted { (first, second) -> Bool in
             if first.lowerBound == second.lowerBound {
@@ -101,38 +101,38 @@ class Highlighter {
         }
     }
 
-    func highlight(string: String, with searches: [Range<String.Index>]) -> NSAttributedString {
+    func highlight(_ ranges: [Range<String.Index>], in text: String) -> NSAttributedString {
         print("highlight")
-        let attributedString = NSMutableAttributedString(string: string)
-        searches.forEach { search in
+        let attributedText = NSMutableAttributedString(string: text)
+        ranges.forEach { range in
             if let font = UIFont(name: "Helvetica", size: 18) {
                 let attributes = [
                     NSAttributedString.Key.foregroundColor: UIColor.red,
                     NSAttributedString.Key.font: font
                 ]
-                attributedString.addAttributes(attributes, range: NSRange(search, in: string))
+                attributedText.addAttributes(attributes, range: NSRange(range, in: text))
             }
         }
-        return attributedString
+        return attributedText
     }
 
-    func snip(string: String, by range: Range<String.Index>, maxCount: Int) -> Range<String.Index> {
+    func snip(_ text: String, around range: Range<String.Index>, maxCount: Int) -> Range<String.Index> {
         print("snip")
-        guard string.count > maxCount else {
-            return Range(uncheckedBounds: (lower: string.startIndex, upper: string.endIndex))
+        guard text.count > maxCount else {
+            return Range(uncheckedBounds: (lower: text.startIndex, upper: text.endIndex))
         }
 
         var windowLeft = range.lowerBound
         var windowRight = range.upperBound
-        var count = string.distance(from: windowLeft, to: windowRight) + 1
+        var count = text.distance(from: windowLeft, to: windowRight) + 1
         repeat {
-            if windowLeft != string.startIndex && count <= maxCount {
-                windowLeft = string.index(windowLeft, offsetBy: -1)
+            if windowLeft != text.startIndex && count <= maxCount {
+                windowLeft = text.index(windowLeft, offsetBy: -1)
                 count += 1
             }
             
-            if windowRight != string.endIndex && count <= maxCount {
-                windowRight = string.index(windowRight, offsetBy: 1)
+            if windowRight != text.endIndex && count <= maxCount {
+                windowRight = text.index(windowRight, offsetBy: 1)
                 count += 1
             }
             
@@ -146,5 +146,5 @@ print("------")
 
 let sentence = "Plz 2 snip snip me"
 let search = "Plz snip me"
-let highlighter = Highlighter(sentence: sentence, search: search, maxCount: 10)
+let highlighter = Highlighter(text: sentence, search: search, maxCount: 10)
 let attributed = highlighter.execute()
